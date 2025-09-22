@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from "../lib/api";
 import { getAuth } from "../lib/auth";
@@ -11,10 +11,19 @@ import BestCardBanner from "../components/BestCardBanner";
 
 export default function Suggestions() {
     const router = useRouter();
-    const { email } = getAuth();
     const [storeName, setStoreName] = useState("");
     const [bestCard, setBestCard] = useState<any | null>(null);
     const [otherCards, setOtherCards] = useState<any[]>([]);
+
+    // ✅ Only run on client
+    useEffect(() => {
+        const { email } = getAuth();
+        if (!email) {
+            router.push("/login");
+        } else {
+            setEmail(email);
+        }
+    }, [router]);
 
     if (!email) {
         router.push("/login");
