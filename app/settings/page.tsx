@@ -12,7 +12,7 @@ export default function Settings() {
         // load profile by email if saved
         const savedEmail = localStorage.getItem("userEmail");
         if (savedEmail) {
-            axios.get(`http://localhost:8080/api/user/${savedEmail}`).then((res) => {
+            axios.get(`https://credit-card-advisor-app.onrender.com/api/user/${savedEmail}`).then((res) => {
                 setProfile(res.data);
             });
         }
@@ -20,7 +20,7 @@ export default function Settings() {
 
     const saveProfile = async () => {
         try {
-            const res = await axios.post("http://localhost:8080/api/user", profile);
+            const res = await axios.post("https://credit-card-advisor-app.onrender.com/api/user", profile);
             setProfile(res.data);
             localStorage.setItem("userEmail", res.data.email);
             alert("Profile saved!");
