@@ -40,17 +40,32 @@ export default function Settings() {
                 return;
             }
 
-            let res;
-            // ✅ Check if profile exists
-            const check = await api
-                .get(`/api/user/${profile.email}`)
-                .catch(() => null);
+            // Always fetch latest from backend first
+            let existing: Profile | null = null;
+            try {
+                const res = await api.get(`/api/user/${profile.email}`);
+                if (res.status === 200) {
+                    existing = res.data;
+                }
+            } catch (_) {
+                existing = null;
+            }
 
-            if (check && check.status === 200) {
-                // Update
-                res = await api.put(`/api/user/${profile.email}`, profile);
+            let res;
+            if (existing) {
+                // ✅ Merge cards if profile already exists
+                const mergedCards =
+                    profile.userCards.length > 0 ? profile.userCards : existing.userCards;
+
+                const updatedProfile = {
+                    ...existing,
+                    name: profile.name || existing.name,
+                    userCards: mergedCards,
+                };
+
+                res = await api.put(`/api/user/${profile.email}`, updatedProfile);
             } else {
-                // Create
+                // ✅ New user → create
                 res = await api.post("/api/user", profile);
             }
 
