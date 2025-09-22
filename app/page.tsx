@@ -8,6 +8,7 @@ import Header from "../components/Header";
 import StoreInput from "../components/StoreInput";
 import SuggestionsList from "../components/SuggestionsList";
 import BestCardBanner from "../components/BestCardBanner";
+import api from "../lib/api";
 
 type Profile = { name: string; email: string; userCards: string[] };
 
@@ -41,7 +42,7 @@ export default function Home() {
 
         (async () => {
             try {
-                const res = await axios.get<Profile>(`https://credit-card-advisor-app.onrender.com/api/user/${savedEmail}`);
+                const res = await api.get<Profile>(`/api/user/${savedEmail}`);
                 setProfile(res.data);
                 // Optional: if you want to prefill something from profile later, do it here
             } catch (e) {
@@ -80,7 +81,7 @@ export default function Home() {
                     userCards: profile.userCards, // ✅ send user cards
                 };
 
-                const res = await axios.post("https://credit-card-advisor-app.onrender.com/api/get-card-suggestions", payload);
+                const res = await api.post("/api/get-card-suggestions", payload);
 
                 if (res.data.store) setStoreName(res.data.store);
                 if (res.data.suggestions?.length) {
@@ -111,7 +112,7 @@ export default function Home() {
                 userCards: profile.userCards, // ✅ send user cards
             };
 
-            const res = await axios.post("https://credit-card-advisor-app.onrender.com/api/get-card-suggestions", payload);
+            const res = await api.post("/api/get-card-suggestions", payload);
 
             if (res.data.store) setStoreName(res.data.store);
             if (res.data.suggestions?.length) {

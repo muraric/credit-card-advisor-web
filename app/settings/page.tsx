@@ -3,24 +3,57 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Header from "../../components/Header";
+import api from "../../lib/api";
+
+
+interface Profile {
+    id?: number;
+    name: string;
+    email: string;
+    userCards: string[];
+}
 
 export default function Settings() {
-    const [profile, setProfile] = useState({ name: "", email: "", userCards: [] as string[] });
+    const [profile, setProfile] = useState<Profile>({ name: "", email: "", userCards: [] });
     const [newCard, setNewCard] = useState("");
 
+    // ✅ Load profile on mount if email exists in localStorage
     useEffect(() => {
-        // load profile by email if saved
-        const savedEmail = localStorage.getItem("userEmail");
+        const savedEmail = typeof window !== "undefined" ? localStorage.getItem("userEmail") : null;
         if (savedEmail) {
-            axios.get(`https://credit-card-advisor-app.onrender.com/api/user/${savedEmail}`).then((res) => {
-                setProfile(res.data);
-            });
+            api
+                .get(`/api/user/${savedEmail}`)
+                .then((res) => {
+                    setProfile(res.data);
+                })
+                .catch(() => {
+                    // If not found, keep profile empty but set email
+                    setProfile({ name: "", email: savedEmail, userCards: [] });
+                });
         }
     }, []);
 
     const saveProfile = async () => {
         try {
-            const res = await axios.post("https://credit-card-advisor-app.onrender.com/api/user", profile);
+            if (!profile.email) {
+                alert("Email is required to save profile");
+                return;
+            }
+
+            let res;
+            // ✅ Check if profile exists
+            const check = await api
+                .get(`/api/user/${profile.email}`)
+                .catch(() => null);
+
+            if (check && check.status === 200) {
+                // Update
+                res = await api.put(`/api/user/${profile.email}`, profile);
+            } else {
+                // Create
+                res = await api.post("/api/user", profile);
+            }
+
             setProfile(res.data);
             localStorage.setItem("userEmail", res.data.email);
             alert("Profile saved!");
@@ -49,6 +82,7 @@ export default function Settings() {
             <Header />
             <h1 className="text-2xl font-bold mt-6 mb-4">⚙️ Settings</h1>
 
+            {/* Profile Inputs */}
             <input
                 className="w-full border p-2 rounded mb-2"
                 placeholder="Name"
@@ -61,6 +95,7 @@ export default function Settings() {
                 value={profile.email}
                 onChange={(e) => setProfile({ ...profile, email: e.target.value })}
             />
+
             <button
                 onClick={saveProfile}
                 className="w-full py-2 bg-green-600 text-white rounded mb-4"
@@ -68,6 +103,7 @@ export default function Settings() {
                 Save Profile
             </button>
 
+            {/* Card Management */}
             <h2 className="text-lg font-semibold">My Cards</h2>
             <div className="flex gap-2 mb-2">
                 <input
