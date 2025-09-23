@@ -1,20 +1,13 @@
-export const saveAuth = (token: string, email: string) => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem("token", token);
-    localStorage.setItem("email", email);
-    document.cookie = `token=${token}; path=/`;
-};
+export function setAuth(auth: { email: string }) {
+    localStorage.setItem("auth", JSON.stringify(auth));
+}
 
-export const getAuth = () => {
-    if (typeof window === "undefined") return { token: null, email: null };
-    const token = localStorage.getItem("token");
-    const email = localStorage.getItem("email");
-    return { token, email };
-};
+export function getAuth(): { email: string | null } {
+    if (typeof window === "undefined") return { email: null };
+    const data = localStorage.getItem("auth");
+    return data ? JSON.parse(data) : { email: null };
+}
 
-export const clearAuth = () => {
-    if (typeof window === "undefined") return;
-    localStorage.removeItem("token");
-    localStorage.removeItem("email");
-    document.cookie = "token=; Max-Age=0; path=/";
-};
+export function clearAuth() {
+    localStorage.removeItem("auth");
+}

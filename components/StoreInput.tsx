@@ -1,10 +1,10 @@
 "use client";
 
-export default function StoreInput({
-                                       store,
-                                       setStore,
-                                       onSubmit,
-                                   }: {
+function StoreInput({
+                        store,
+                        setStore,
+                        onSubmit,
+                    }: {
     store: string;
     setStore: (s: string) => void;
     onSubmit: (store: string) => void;
@@ -28,3 +28,5 @@ export default function StoreInput({
         </div>
     );
 }
+
+export default StoreInput;

@@ -15,6 +15,7 @@ import TipBanner from "../components/TipBanner";
 export default function Suggestions() {
     const router = useRouter();
     const [email, setEmail] = useState<string | null>(null);
+    const [name, setName] = useState<string>("");
     const [storeName, setStoreName] = useState("");
     const [bestCard, setBestCard] = useState<any | null>(null);
     const [otherCards, setOtherCards] = useState<any[]>([]);
@@ -26,6 +27,18 @@ export default function Suggestions() {
             router.push("/login");
         } else {
             setEmail(storedEmail);
+
+            // Fetch profile to get name
+            api
+                .get(`/api/user/${storedEmail}`)
+                .then((res) => {
+                    if (res.data?.name) {
+                        setName(res.data.name);
+                    }
+                })
+                .catch(() => {
+                    setName(""); // fallback
+                });
         }
     }, [router]);
 
@@ -76,6 +89,18 @@ export default function Suggestions() {
 
     return (
         <Layout>
+            {/* Welcome Banner */}
+            <div className="mb-6">
+                <div className="p-4 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md text-center">
+                    <h2 className="text-xl font-semibold">
+                        👋 Welcome back, {name || email.split("@")[0]}!
+                    </h2>
+                    <p className="text-sm opacity-90">
+                        Ready to maximize your rewards today?
+                    </p>
+                </div>
+            </div>
+
             <h1 className="text-2xl font-bold text-gray-800 mb-6">
                 Find the Best Card for Your Purchase
             </h1>

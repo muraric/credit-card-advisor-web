@@ -1,7 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 
-export default function SuggestionsList({ suggestions }: { suggestions: any[] }) {
+function SuggestionsList({ suggestions }: { suggestions: any[] }) {
     return (
         <div className="space-y-4">
             {suggestions.map((card, idx) => (
@@ -22,3 +22,5 @@ export default function SuggestionsList({ suggestions }: { suggestions: any[] })
         </div>
     );
 }
+
+export default SuggestionsList;

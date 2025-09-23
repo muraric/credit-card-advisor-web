@@ -1,7 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 
-export default function BestCardBanner({ card }: { card: any }) {
+function BestCardBanner({ card }: { card: any }) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -16,3 +16,5 @@ export default function BestCardBanner({ card }: { card: any }) {
         </motion.div>
     );
 }
+
+export default BestCardBanner;
