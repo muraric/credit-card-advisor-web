@@ -13,18 +13,19 @@ import BestCardBanner from "../components/BestCardBanner";
 export default function Suggestions() {
   const router = useRouter();
 
-  // ✅ Declare email state properly
+  // ✅ state variable
   const [email, setEmail] = useState<string | null>(null);
   const [storeName, setStoreName] = useState("");
   const [bestCard, setBestCard] = useState<any | null>(null);
   const [otherCards, setOtherCards] = useState<any[]>([]);
 
   useEffect(() => {
-    const { email } = getAuth();
-    if (!email) {
+    // ✅ rename local variable to avoid conflict
+    const { email: storedEmail } = getAuth();
+    if (!storedEmail) {
       router.push("/login");
     } else {
-      setEmail(email);
+      setEmail(storedEmail);
     }
   }, [router]);
 
