@@ -13,7 +13,7 @@ export default function ManageCards() {
     const [newCard, setNewCard] = useState("");
 
     useEffect(() => {
-        const { email } = getAuth();
+        const [ email, setEmail ] = useState(null);;
         if (!email) {
             router.push("/login");
             return;
