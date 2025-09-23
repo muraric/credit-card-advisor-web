@@ -14,13 +14,13 @@ export default function ManageCards() {
   const [newCard, setNewCard] = useState("");
 
   useEffect(() => {
-    const { email } = getAuth();
-    if (!email) {
+    const { email: storedEmail } = getAuth(); // ✅ renamed
+    if (!storedEmail) {
       router.push("/login");
     } else {
-      setEmail(email);
+      setEmail(storedEmail);
 
-      api.get(`/api/user/${email}`)
+      api.get(`/api/user/${storedEmail}`)
         .then((res) => setCards(res.data.userCards || []))
         .catch(() => setCards([]));
     }
