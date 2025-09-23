@@ -18,7 +18,7 @@ export default function Suggestions() {
 
     // ✅ Only run on client
     useEffect(() => {
-        const { email } = getAuth();
+        const [ email, setEmail ] = useState(null);
         if (!email) {
             router.push("/login");
         } else {
