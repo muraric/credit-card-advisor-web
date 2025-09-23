@@ -21,15 +21,15 @@ export default function Settings() {
   const [newCard, setNewCard] = useState("");
 
   useEffect(() => {
-    const { email } = getAuth();
-    if (!email) {
+    const { email: storedEmail } = getAuth(); // ✅ renamed
+    if (!storedEmail) {
       router.push("/login");
     } else {
-      setEmail(email);
+      setEmail(storedEmail);
 
-      api.get(`/api/user/${email}`)
+      api.get(`/api/user/${storedEmail}`)
         .then((res) => setProfile(res.data))
-        .catch(() => setProfile({ name: "", email, userCards: [] }));
+        .catch(() => setProfile({ name: "", email: storedEmail, userCards: [] }));
     }
   }, [router]);
 
