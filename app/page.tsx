@@ -1,87 +1,35 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import api from "../lib/api";
-import { getAuth } from "../lib/auth";
+import { useState } from "react";
 import Layout from "../components/Layout";
 import StoreInput from "../components/StoreInput";
 import SuggestionsList from "../components/SuggestionsList";
 import BestCardBanner from "../components/BestCardBanner";
 import LoadingSpinner from "../components/LoadingSpinner";
 import TipBanner from "../components/TipBanner";
+import api from "../lib/api";
 
 export default function Suggestions() {
-    const router = useRouter();
-    const [email, setEmail] = useState<string | null>(null);
-    const [name, setName] = useState<string>("");
-    const [storeName, setStoreName] = useState("");
-    const [bestCard, setBestCard] = useState<any | null>(null);
-    const [otherCards, setOtherCards] = useState<any[]>([]);
+    const [store, setStore] = useState("");
+    const [suggestions, setSuggestions] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [bestCard, setBestCard] = useState<any | null>(null);
 
-    useEffect(() => {
-        const { email: storedEmail } = getAuth();
-        if (!storedEmail) {
-            router.push("/login");
-        } else {
-            setEmail(storedEmail);
-
-            // Fetch profile to get name
-            api
-                .get(`/api/user/${storedEmail}`)
-                .then((res) => {
-                    if (res.data?.name) {
-                        setName(res.data.name);
-                    }
-                })
-                .catch(() => {
-                    setName(""); // fallback
-                });
-        }
-    }, [router]);
-
-    if (!email) return null;
-
-    const handleDetectStore = () => {
-        if (!navigator.geolocation) {
-            alert("Geolocation not supported");
-            return;
-        }
-        setLoading(true);
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            try {
-                const res = await api.post("/api/get-card-suggestions", {
-                    email,
-                    latitude: pos.coords.latitude,
-                    longitude: pos.coords.longitude,
-                    currentQuarter: "Q4 2025",
-                });
-                setStoreName(res.data.store);
-                if (res.data.suggestions?.length) {
-                    setBestCard(res.data.suggestions[0]);
-                    setOtherCards(res.data.suggestions.slice(1));
-                }
-            } finally {
-                setLoading(false);
-            }
-        });
-    };
-
-    const handleManualStore = async (store: string) => {
+    const handleSubmit = async (storeName: string) => {
         setLoading(true);
         try {
             const res = await api.post("/api/get-card-suggestions", {
-                email,
-                store,
+                store: storeName,
                 currentQuarter: "Q4 2025",
             });
-            setStoreName(res.data.store);
-            if (res.data.suggestions?.length) {
-                setBestCard(res.data.suggestions[0]);
-                setOtherCards(res.data.suggestions.slice(1));
+            setSuggestions(res.data);
+
+            if (res.data && res.data.length > 0) {
+                setBestCard(res.data[0]);
             }
+        } catch (err) {
+            console.error(err);
         } finally {
             setLoading(false);
         }
@@ -89,55 +37,40 @@ export default function Suggestions() {
 
     return (
         <Layout>
-            {/* Welcome Banner */}
-            <div className="mb-6">
-                <div className="p-4 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md text-center">
-                    <h2 className="text-xl font-semibold">
-                        👋 Welcome back, {name || email.split("@")[0]}!
-                    </h2>
-                    <p className="text-sm opacity-90">
-                        Ready to maximize your rewards today?
-                    </p>
+            <div className="max-w-lg mx-auto w-full px-4 space-y-6">
+                {/* Page Title */}
+                <h1 className="text-2xl font-bold text-gray-800">💡 Suggestions</h1>
+
+                {/* Store Input */}
+                <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                        className="flex-1 border p-3 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter store name"
+                        value={store}
+                        onChange={(e) => setStore(e.target.value)}
+                    />
+                    <button
+                        onClick={() => handleSubmit(store)}
+                        className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold w-full sm:w-auto"
+                    >
+                        Get Suggestions
+                    </button>
                 </div>
+
+                {/* Tip Banner */}
+                <TipBanner text="Pro Tip: You can also allow location access to auto-detect the nearest store!" />
+
+                {/* Loading Spinner */}
+                {loading && <LoadingSpinner />}
+
+                {/* Best Card Banner */}
+                {bestCard && !loading && <BestCardBanner card={bestCard} />}
+
+                {/* Suggestions List */}
+                {!loading && suggestions.length > 0 && (
+                    <SuggestionsList suggestions={suggestions} />
+                )}
             </div>
-
-            <h1 className="text-2xl font-bold text-gray-800 mb-6">
-                Find the Best Card for Your Purchase
-            </h1>
-
-            <TipBanner text="💡 Tip: Add more cards in your profile to maximize savings!" />
-
-            <div className="space-y-4 mt-6">
-                <button
-                    onClick={handleDetectStore}
-                    className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold"
-                >
-                    📍 Detect My Store & Get Suggestions
-                </button>
-
-                <StoreInput
-                    store={storeName}
-                    setStore={setStoreName}
-                    onSubmit={handleManualStore}
-                />
-            </div>
-
-            {loading && <LoadingSpinner />}
-
-            {!loading && bestCard && (
-                <div className="mt-8">
-                    <BestCardBanner card={bestCard} />
-                </div>
-            )}
-
-            {!loading && otherCards.length > 0 && (
-                <div className="mt-6">
-                    <h2 className="text-lg font-semibold mb-4 text-gray-700">
-                        Other Options
-                    </h2>
-                    <SuggestionsList suggestions={otherCards} />
-                </div>
-            )}
         </Layout>
     );
 }

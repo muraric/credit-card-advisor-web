@@ -7,12 +7,16 @@ function BestCardBanner({ card }: { card: any }) {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="p-6 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg"
+            className="p-4 sm:p-6 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg"
         >
-            <h2 className="text-lg font-semibold mb-2">⭐ Best Card Recommendation</h2>
-            <h3 className="text-2xl font-bold">{card.card_name}</h3>
-            <p className="mt-2 text-lg font-medium">Reward: {card.expected_reward}</p>
-            <p className="mt-1 text-sm opacity-90">{card.reasoning}</p>
+            <h2 className="text-base sm:text-lg font-semibold mb-2">
+                ⭐ Best Card Recommendation
+            </h2>
+            <h3 className="text-xl sm:text-2xl font-bold">{card.card_name}</h3>
+            <p className="mt-2 text-sm sm:text-lg font-medium">
+                Reward: {card.expected_reward}
+            </p>
+            <p className="mt-1 text-xs sm:text-sm opacity-90">{card.reasoning}</p>
         </motion.div>
     );
 }
