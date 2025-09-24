@@ -1,5 +1,6 @@
 import "./globals.css";
 
+
 export const metadata = {
     title: "Credit Card Advisor",
     description: "Find the best credit card for your purchases",
