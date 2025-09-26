@@ -17,6 +17,11 @@ type Suggestion = {
     reasoning: string;
 };
 
+type StoreInfo = {
+    name: string;
+    category: string;
+};
+
 export default function Suggestions() {
     const router = useRouter();
 
@@ -25,6 +30,8 @@ export default function Suggestions() {
 
     // UI / form
     const [storeInput, setStoreInput] = useState("");
+    const [storeOptions, setStoreOptions] = useState<StoreInfo[]>([]);
+    const [showModal, setShowModal] = useState(false);
 
     // Data from backend
     const [detectedStore, setDetectedStore] = useState<string | null>(null);
@@ -38,7 +45,6 @@ export default function Suggestions() {
 
     useEffect(() => {
         const { email: storedEmail } = getAuth();
-        console.log("📥 Auth loaded:", storedEmail);
         if (!storedEmail) {
             router.push("/login");
             return;
@@ -46,9 +52,7 @@ export default function Suggestions() {
         setEmail(storedEmail);
     }, [router]);
 
-    // Common handler to normalize the backend response
     const applyResponse = (data: any) => {
-        // Expected: { store, category, suggestions: Suggestion[] }
         const returnedStore = data?.store ?? null;
         const returnedCategory = data?.category ?? null;
         const list: Suggestion[] = Array.isArray(data?.suggestions)
@@ -60,14 +64,13 @@ export default function Suggestions() {
         setSuggestions(list);
         setBestCard(list.length > 0 ? list[0] : null);
 
-        // Also reflect store name in the input for clarity
         if (returnedStore) setStoreInput(returnedStore);
     };
 
-    // Manual store flow
-    const handleManualSubmit = async () => {
+    // Submit suggestions request
+    const handleSubmit = async (storeName: string, category?: string) => {
         if (!email) return;
-        if (!storeInput.trim()) {
+        if (!storeName.trim()) {
             setErrMsg("Please enter a store name.");
             return;
         }
@@ -77,21 +80,23 @@ export default function Suggestions() {
         try {
             const res = await api.post("/api/get-card-suggestions", {
                 email,
-                store: storeInput.trim(),
+                store: storeName.trim(),
+                category: category || "general", // fallback if free-form
                 currentQuarter: "Q4 2025",
             });
 
-            console.log("🔎 Manual suggestion response:", res.data);
+            console.log("🔎 Suggestion response:", res.data);
             applyResponse(res.data);
         } catch (err: any) {
-            console.error("❌ Manual suggestion error:", err);
+            console.error("❌ Suggestion error:", err);
             setErrMsg("Failed to get suggestions. Please try again.");
         } finally {
             setLoading(false);
+            setShowModal(false);
         }
     };
 
-    // Auto-detect flow (geolocation → backend)
+    // Detect nearby stores
     const handleDetectStore = async () => {
         if (!email) return;
 
@@ -109,18 +114,24 @@ export default function Suggestions() {
                     const { latitude, longitude } = pos.coords;
                     console.log("📍 Geolocation:", { latitude, longitude });
 
-                    const res = await api.post("/api/get-card-suggestions", {
-                        email,
-                        latitude,
-                        longitude,
-                        currentQuarter: "Q4 2025",
+                    const res = await api.get("/api/google/detect-stores", {
+                        params: { latitude, longitude },
                     });
 
-                    console.log("📍 Auto-detect response:", res.data);
-                    applyResponse(res.data);
+                    let stores: StoreInfo[] = res.data.stores || [];
+
+                    if (stores.length === 0) {
+                        // No stores → default to Unknown Store directly
+                        console.log("⚠️ No stores found, defaulting to Unknown Store");
+                        await handleSubmit("Unknown Store", "general");
+                    } else {
+                        // Show modal with options
+                        setStoreOptions(stores);
+                        setShowModal(true);
+                    }
                 } catch (err: any) {
-                    console.error("❌ Auto-detect error:", err);
-                    setErrMsg("Failed to detect store or get suggestions. Please try again.");
+                    console.error("❌ Detect stores error:", err);
+                    setErrMsg("Failed to detect stores.");
                 } finally {
                     setLoading(false);
                 }
@@ -130,13 +141,8 @@ export default function Suggestions() {
                 setLoading(false);
                 setErrMsg(
                     geoErr?.message ||
-                    "Unable to access location. Please allow location permissions and try again."
+                    "Unable to access location. Please allow location permissions."
                 );
-            },
-            {
-                enableHighAccuracy: false,
-                timeout: 15000,
-                maximumAge: 60000,
             }
         );
     };
@@ -148,32 +154,30 @@ export default function Suggestions() {
             <div className="max-w-lg mx-auto w-full px-4 space-y-6">
                 <h1>💡 Suggestions</h1>
 
-                {/* Actions */}
-                <div className="space-y-3">
+                {/* Manual store input */}
+                <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                        className="flex-1 border p-3 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter store name (e.g. Walmart, Patel Brothers)"
+                        value={storeInput}
+                        onChange={(e) => setStoreInput(e.target.value)}
+                    />
                     <button
-                        onClick={handleDetectStore}
-                        className="btn btn-primary w-full"
-                        disabled={loading}
+                        onClick={() => handleSubmit(storeInput, "general")}
+                        className="btn btn-primary w-full sm:w-auto"
                     >
-                        📍 Detect My Store & Get Suggestions
+                        Get Suggestions
                     </button>
-
-                    <div className="flex flex-col sm:flex-row gap-2">
-                        <input
-                            className="flex-1 border p-3 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                            placeholder="Enter store name (e.g., Walmart, Amazon, Patel Brothers)"
-                            value={storeInput}
-                            onChange={(e) => setStoreInput(e.target.value)}
-                        />
-                        <button
-                            onClick={handleManualSubmit}
-                            className="btn btn-primary w-full sm:w-auto"
-                            disabled={loading}
-                        >
-                            Get Suggestions
-                        </button>
-                    </div>
                 </div>
+
+                {/* Auto-detect */}
+                <button
+                    onClick={handleDetectStore}
+                    className="btn btn-primary w-full mt-3"
+                    disabled={loading}
+                >
+                    📍 Detect My Store & Get Suggestions
+                </button>
 
                 {/* Tip */}
                 <TipBanner text="Pro Tip: Add your cards in Settings to get more accurate recommendations." />
@@ -209,6 +213,38 @@ export default function Suggestions() {
                     <SuggestionsList suggestions={suggestions} />
                 )}
             </div>
+
+            {/* Modal for store options */}
+            {showModal && storeOptions.length > 0 && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                    <div className="bg-white rounded-lg shadow-lg w-11/12 max-w-md p-6 space-y-4">
+                        <h2 className="text-lg font-semibold text-gray-800 text-center">
+                            Select your store
+                        </h2>
+                        <ul className="space-y-2">
+                            {storeOptions.map((s, idx) => (
+                                <li key={idx}>
+                                    <button
+                                        onClick={() => handleSubmit(s.name, s.category)}
+                                        className="w-full text-left px-4 py-2 border rounded-lg hover:bg-gray-50"
+                                    >
+                                        {s.name}{" "}
+                                        <span className="text-xs text-gray-500">
+                      ({s.category})
+                    </span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                        <button
+                            onClick={() => setShowModal(false)}
+                            className="btn btn-danger w-full mt-4"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
         </Layout>
     );
 }
