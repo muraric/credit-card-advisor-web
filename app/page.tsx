@@ -36,6 +36,7 @@ export default function Suggestions() {
     // Data from backend
     const [detectedStore, setDetectedStore] = useState<string | null>(null);
     const [category, setCategory] = useState<string | null>(null);
+    const [currentQuarter, setCurrentQuarter] = useState<string | null>(null);
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [bestCard, setBestCard] = useState<Suggestion | null>(null);
 
@@ -55,12 +56,14 @@ export default function Suggestions() {
     const applyResponse = (data: any) => {
         const returnedStore = data?.store ?? null;
         const returnedCategory = data?.category ?? null;
+        const returnedQuarter = data?.currentQuarter ?? null;
         const list: Suggestion[] = Array.isArray(data?.suggestions)
             ? data.suggestions
             : [];
 
         setDetectedStore(returnedStore);
         setCategory(returnedCategory);
+        setCurrentQuarter(returnedQuarter);
         setSuggestions(list);
         setBestCard(list.length > 0 ? list[0] : null);
 
@@ -81,8 +84,7 @@ export default function Suggestions() {
             const res = await api.post("/api/get-card-suggestions", {
                 email,
                 store: storeName.trim(),
-                category: category || "general", // fallback if free-form
-                currentQuarter: "Q4 2025",
+                category: category || "general",
             });
 
             console.log("🔎 Suggestion response:", res.data);
@@ -121,11 +123,9 @@ export default function Suggestions() {
                     let stores: StoreInfo[] = res.data.stores || [];
 
                     if (stores.length === 0) {
-                        // No stores → default to Unknown Store directly
                         console.log("⚠️ No stores found, defaulting to Unknown Store");
                         await handleSubmit("Unknown Store", "general");
                     } else {
-                        // Show modal with options
                         setStoreOptions(stores);
                         setShowModal(true);
                     }
@@ -148,6 +148,25 @@ export default function Suggestions() {
     };
 
     if (!email) return null;
+
+    // Category → Tailwind text colors
+    const getCategoryColor = (cat: string | null) => {
+        const normalized = cat ? cat.toLowerCase() : "";
+        switch (normalized) {
+            case "groceries":
+                return "text-green-600";
+            case "online":
+                return "text-blue-600";
+            case "department_store":
+                return "text-purple-600";
+            case "dining":
+                return "text-orange-600";
+            case "travel":
+                return "text-indigo-600";
+            default:
+                return "text-gray-600";
+        }
+    };
 
     return (
         <Layout>
@@ -194,13 +213,27 @@ export default function Suggestions() {
 
                 {/* Store banner */}
                 {!loading && detectedStore && (
-                    <div className="p-4 rounded-lg bg-gray-100 border text-sm text-gray-700">
-                        Store: <span className="font-medium">{detectedStore}</span>
+                    <div className="p-4 rounded-lg bg-gray-100 border text-sm text-gray-700 space-y-1">
+                        <div>
+                            🏬 Store: <span className="font-medium">{detectedStore}</span>
+                        </div>
                         {category && (
-                            <>
-                                {" "}
-                                (<span className="capitalize">{category}</span>)
-                            </>
+                            <div>
+                                🏷️ Category:{" "}
+                                <span
+                                    className={`capitalize font-medium ${getCategoryColor(
+                                        category
+                                    )}`}
+                                >
+                  {category}
+                </span>
+                            </div>
+                        )}
+                        {currentQuarter && (
+                            <div>
+                                📅 Current Quarter:{" "}
+                                <span className="font-medium">{currentQuarter}</span>
+                            </div>
                         )}
                     </div>
                 )}
@@ -229,7 +262,11 @@ export default function Suggestions() {
                                         className="w-full text-left px-4 py-2 border rounded-lg hover:bg-gray-50"
                                     >
                                         {s.name}{" "}
-                                        <span className="text-xs text-gray-500">
+                                        <span
+                                            className={`text-xs font-medium ml-1 ${getCategoryColor(
+                                                s.category
+                                            )}`}
+                                        >
                       ({s.category})
                     </span>
                                     </button>
