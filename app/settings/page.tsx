@@ -7,12 +7,25 @@ import api from "../../lib/api";
 import { getAuth } from "../../lib/auth";
 import Layout from "../../components/Layout";
 import { AnimatePresence, motion } from "framer-motion";
+import LoadingSpinner from "../../components/LoadingSpinner";
+
+interface CreditCard {
+    cardId?: number;
+    cardName: string;
+    rewardDefinition?: Record<string, any>;
+}
+
+interface UserCard {
+    userCardId?: number;
+    creditCard: CreditCard;
+}
 
 interface Profile {
     id?: number;
     name: string;
     email: string;
-    userCards: string[];
+    passwordHash?: string;
+    userCards: UserCard[];
 }
 
 export default function Settings() {
@@ -35,7 +48,7 @@ export default function Settings() {
     const fetchProfile = async (email: string) => {
         setLoading(true);
         try {
-            const res = await api.get(`/api/user/${email}`);
+            const res = await api.get(`/api/user/${encodeURIComponent(email)}`);
             setProfile(res.data);
         } catch (err) {
             console.error("❌ Failed to load profile:", err);
@@ -47,7 +60,18 @@ export default function Settings() {
     const saveProfile = async () => {
         if (!email || !profile) return;
         try {
-            const res = await api.put(`/api/user/${email}`, profile);
+            // ✅ Send structured userCards with creditCard
+            const payload = {
+                name: profile.name,
+                userCards: profile.userCards.map((uc) => ({
+                    creditCard: { cardName: uc.creditCard.cardName },
+                })),
+            };
+
+            const res = await api.put(
+                `/api/user/${encodeURIComponent(email)}`,
+                payload
+            );
             setProfile(res.data);
             alert("Profile saved!");
         } catch (err) {
@@ -59,7 +83,10 @@ export default function Settings() {
         if (profile && newCard.trim()) {
             setProfile({
                 ...profile,
-                userCards: [...profile.userCards, newCard.trim()],
+                userCards: [
+                    ...profile.userCards,
+                    { creditCard: { cardName: newCard.trim() } },
+                ],
             });
             setNewCard("");
         }
@@ -81,9 +108,9 @@ export default function Settings() {
             <div className="max-w-lg mx-auto w-full px-4 space-y-6">
                 <h1>⚙️ Settings</h1>
 
-                {loading && <p className="text-gray-500 text-sm">Loading...</p>}
+                {loading && <LoadingSpinner />}
 
-                {profile && (
+                {profile && !loading && (
                     <>
                         {/* Profile Section */}
                         <div className="bg-white shadow rounded-lg p-4 sm:p-6 space-y-4">
@@ -107,7 +134,7 @@ export default function Settings() {
                             </button>
                         </div>
 
-                        {/* Manage Cards Section */}
+                        {/* Cards Section */}
                         <div className="bg-white shadow rounded-lg p-4 sm:p-6">
                             <h2>💳 Manage Cards</h2>
 
@@ -128,9 +155,9 @@ export default function Settings() {
 
                             <ul className="space-y-2 sm:space-y-3">
                                 <AnimatePresence>
-                                    {profile.userCards.map((card, idx) => (
+                                    {profile.userCards.map((uc, idx) => (
                                         <motion.li
-                                            key={card + idx}
+                                            key={uc.userCardId ?? uc.creditCard.cardName + idx}
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -20 }}
@@ -138,7 +165,7 @@ export default function Settings() {
                                             className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 border rounded-lg p-3 sm:p-4"
                                         >
                       <span className="text-sm sm:text-base mb-2 sm:mb-0">
-                        {card}
+                        {uc.creditCard.cardName}
                       </span>
                                             <button
                                                 onClick={() => removeCard(idx)}
