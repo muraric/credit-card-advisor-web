@@ -9,15 +9,13 @@ import Layout from "../../components/Layout";
 import { AnimatePresence, motion } from "framer-motion";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
-interface CreditCard {
-    cardId?: number;
-    cardName: string;
-    rewardDefinition?: Record<string, any>;
+interface RewardDetails {
+    cardReward?: Record<string, any>; // flexible structure
 }
 
 interface UserCard {
-    userCardId?: number;
-    creditCard: CreditCard;
+    card_name: string;
+    rewardDetails: RewardDetails;
 }
 
 interface Profile {
@@ -59,12 +57,13 @@ export default function Settings() {
 
     const saveProfile = async () => {
         if (!email || !profile) return;
+        setLoading(true); // show spinner while saving
         try {
             // ✅ Send structured userCards with creditCard
             const payload = {
                 name: profile.name,
                 userCards: profile.userCards.map((uc) => ({
-                    creditCard: { cardName: uc.creditCard.cardName },
+                    card_name: uc.card_name,
                 })),
             };
 
@@ -73,9 +72,11 @@ export default function Settings() {
                 payload
             );
             setProfile(res.data);
-            alert("Profile saved!");
+            // alert("Profile saved!");
         } catch (err) {
             console.error("❌ Failed to save profile:", err);
+        } finally {
+            setLoading(false); // hide spinner
         }
     };
 
@@ -83,10 +84,7 @@ export default function Settings() {
         if (profile && newCard.trim()) {
             setProfile({
                 ...profile,
-                userCards: [
-                    ...profile.userCards,
-                    { creditCard: { cardName: newCard.trim() } },
-                ],
+                userCards: [...profile.userCards, { card_name: newCard.trim(), rewardDetails: {} }],
             });
             setNewCard("");
         }
@@ -157,7 +155,7 @@ export default function Settings() {
                                 <AnimatePresence>
                                     {profile.userCards.map((uc, idx) => (
                                         <motion.li
-                                            key={uc.userCardId ?? uc.creditCard.cardName + idx}
+                                            key={uc.card_name + idx}
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -20 }}
@@ -165,7 +163,7 @@ export default function Settings() {
                                             className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 border rounded-lg p-3 sm:p-4"
                                         >
                       <span className="text-sm sm:text-base mb-2 sm:mb-0">
-                        {uc.creditCard.cardName}
+                        {uc.card_name}
                       </span>
                                             <button
                                                 onClick={() => removeCard(idx)}

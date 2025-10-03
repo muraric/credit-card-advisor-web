@@ -23,10 +23,10 @@ export default function Signup() {
         }
 
         try {
-            const res = await api.post("/api/user/signup", {
+            const res = await api.post("/api/auth/signup", {
                 name,
                 email,
-                passwordHash: password, // ⚡ Backend will hash this properly
+                password: password, // ⚡ Backend will hash this properly
             });
 
             if (res.status === 200) {

@@ -22,17 +22,17 @@ export default function Login() {
         }
 
         try {
-            // Call backend login
-            await api.post("/api/user/login", { email });
+            // Call backend login API
+            await api.post("/api/auth/login", { email, password });
 
             // Save auth locally
             setAuth({ email });
 
-            // Redirect to Settings page
+            // Redirect to Settings
             router.push("/settings");
         } catch (err) {
             console.error("❌ Login failed:", err);
-            setError("Login failed. Please try again.");
+            setError("Invalid email or password. Please try again.");
         }
     };
 
@@ -74,7 +74,21 @@ export default function Login() {
                         Login
                     </button>
                 </form>
+
+                {/* 👇 New user signup info */}
+                <div className="text-center mt-4">
+                    <p className="text-sm">
+                        New user?{" "}
+                        <button
+                            onClick={() => router.push("/signup")}
+                            className="text-blue-600 hover:underline"
+                        >
+                            Sign up here
+                        </button>
+                    </p>
+                </div>
             </div>
         </div>
     );
 }
+``
