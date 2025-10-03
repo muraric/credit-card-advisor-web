@@ -3,47 +3,63 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { setAuth } from "../../lib/auth";
 import api from "../../lib/api";
+import { setAuth } from "../../lib/auth";
 
-export default function Login() {
+export default function Signup() {
     const router = useRouter();
+    const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
 
-    const handleLogin = async (e: React.FormEvent) => {
+    const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
 
-        if (!email) {
-            setError("Please enter your email");
+        if (!name || !email || !password) {
+            setError("Please fill all required fields");
             return;
         }
 
         try {
-            // Call backend login API
-            await api.post("/api/auth/login", { email, password });
+            const res = await api.post("/api/auth/signup", {
+                name,
+                email,
+                password: password, // ⚡ Backend will hash this properly
+            });
 
-            // Save auth locally
-            setAuth({ email });
-
-            // Redirect to Settings
-            router.push("/settings");
-        } catch (err) {
-            console.error("❌ Login failed:", err);
-            setError("Invalid email or password. Please try again.");
+            if (res.status === 200) {
+                setAuth({ email });
+                router.push("/settings");
+            }
+        } catch (err: any) {
+            console.error("❌ Signup failed:", err);
+            setError(err.response?.data?.error || "Signup failed. Please try again.");
         }
     };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
             <div className="max-w-md w-full bg-white shadow-md rounded-lg p-6 sm:p-8 space-y-6">
-                <h1 className="text-center">🔑 Login</h1>
+                <h1 className="text-center text-xl font-bold">📝 Sign Up</h1>
 
                 {error && <p className="text-red-600 text-sm text-center">{error}</p>}
 
-                <form onSubmit={handleLogin} className="space-y-4">
+                <form onSubmit={handleSignup} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Name
+                        </label>
+                        <input
+                            type="text"
+                            className="w-full border p-3 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                            placeholder="Full name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                        />
+                    </div>
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Email
@@ -71,24 +87,20 @@ export default function Login() {
                     </div>
 
                     <button type="submit" className="btn btn-primary w-full">
-                        Login
+                        Sign Up
                     </button>
                 </form>
 
-                {/* 👇 New user signup info */}
-                <div className="text-center mt-4">
-                    <p className="text-sm">
-                        New user?{" "}
-                        <button
-                            onClick={() => router.push("/signup")}
-                            className="text-blue-600 hover:underline"
-                        >
-                            Sign up here
-                        </button>
-                    </p>
+                <div className="text-center text-sm text-gray-600">
+                    Already have an account?{" "}
+                    <button
+                        className="text-blue-600 font-medium hover:underline"
+                        onClick={() => router.push("/login")}
+                    >
+                        Login
+                    </button>
                 </div>
             </div>
         </div>
     );
 }
-``
