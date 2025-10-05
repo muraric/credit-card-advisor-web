@@ -58,7 +58,8 @@ export default function Suggestions() {
         // Fetch the user's name from backend
         const fetchUserName = async () => {
             try {
-                const res = await api.get(`/api/user/${encodeURIComponent(auth.email)}`);
+                const emailParam = encodeURIComponent(auth.email ?? "");
+                const res = await api.get(`/api/user/${emailParam}`);
                 const fetchedName = res.data?.name;
                 if (fetchedName) {
                     // Capitalize each word
