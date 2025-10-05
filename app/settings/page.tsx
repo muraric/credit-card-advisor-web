@@ -248,8 +248,11 @@ export default function Settings() {
                                                             <div>
                                                                 <strong>Rotating Categories:</strong>
                                                                 {Object.entries(
-                                                                    reward.rotating_categories
-                                                                ).map(([quarter, categories]: [string, any[]]) =>
+                                                                    reward.rotating_categories as Record<
+                                                                        string,
+                                                                        any[]
+                                                                    >
+                                                                ).map(([quarter, categories]) =>
                                                                         categories.length > 0 ? (
                                                                             <div key={quarter} className="mt-1">
                                                                                 <p className="font-semibold">{quarter}</p>
