@@ -141,11 +141,26 @@ export default function Suggestions() {
                     const { latitude, longitude } = pos.coords;
                     console.log("📍 Geolocation:", { latitude, longitude });
 
-                    const res = await api.get("/api/google/detect-stores", {
+                    const res = await api.get("/api/google/detect-stores-v1", {
                         params: { latitude, longitude },
                     });
 
-                    let stores: StoreInfo[] = res.data.stores || [];
+                    // ✅ Normalize new and old Google API response formats
+                    let stores: StoreInfo[] = [];
+
+                    if (res.data?.stores?.places && Array.isArray(res.data.stores.places)) {
+                        // New Google Places format
+                        stores = res.data.stores.places.map((p: any) => ({
+                            name: p.displayName?.text || "Unknown",
+                            category: p.primaryType || "general",
+                        }));
+                    } else if (Array.isArray(res.data?.stores)) {
+                        // Old format fallback
+                        stores = res.data.stores.map((s: any) => ({
+                            name: s.name,
+                            category: s.category,
+                        }));
+                    }
 
                     if (stores.length === 0) {
                         console.log("⚠️ No stores found, defaulting to Unknown Store");
@@ -185,6 +200,7 @@ export default function Suggestions() {
             case "department_store":
                 return "text-purple-600";
             case "dining":
+            case "restaurant":
                 return "text-orange-600";
             case "travel":
                 return "text-indigo-600";
