@@ -10,7 +10,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
 interface RewardDetails {
-    cardReward?: Record<string, any>; // flexible structure
+    cardReward?: Record<string, any>;
 }
 
 interface UserCard {
@@ -32,6 +32,7 @@ export default function Settings() {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [newCard, setNewCard] = useState("");
     const [loading, setLoading] = useState(false);
+    const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
     useEffect(() => {
         const { email: storedEmail } = getAuth();
@@ -57,9 +58,8 @@ export default function Settings() {
 
     const saveProfile = async () => {
         if (!email || !profile) return;
-        setLoading(true); // show spinner while saving
+        setLoading(true);
         try {
-            // ✅ Send structured userCards with creditCard
             const payload = {
                 name: profile.name,
                 userCards: profile.userCards.map((uc) => ({
@@ -72,11 +72,10 @@ export default function Settings() {
                 payload
             );
             setProfile(res.data);
-            // alert("Profile saved!");
         } catch (err) {
             console.error("❌ Failed to save profile:", err);
         } finally {
-            setLoading(false); // hide spinner
+            setLoading(false);
         }
     };
 
@@ -84,7 +83,10 @@ export default function Settings() {
         if (profile && newCard.trim()) {
             setProfile({
                 ...profile,
-                userCards: [...profile.userCards, { card_name: newCard.trim(), rewardDetails: {} }],
+                userCards: [
+                    ...profile.userCards,
+                    { card_name: newCard.trim(), rewardDetails: {} },
+                ],
             });
             setNewCard("");
         }
@@ -97,6 +99,10 @@ export default function Settings() {
                 userCards: profile.userCards.filter((_, i) => i !== idx),
             });
         }
+    };
+
+    const toggleExpand = (cardName: string) => {
+        setExpandedCard(expandedCard === cardName ? null : cardName);
     };
 
     if (!email) return null;
@@ -153,26 +159,138 @@ export default function Settings() {
 
                             <ul className="space-y-2 sm:space-y-3">
                                 <AnimatePresence>
-                                    {profile.userCards.map((uc, idx) => (
-                                        <motion.li
-                                            key={uc.card_name + idx}
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -20 }}
-                                            transition={{ duration: 0.3 }}
-                                            className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 border rounded-lg p-3 sm:p-4"
-                                        >
-                      <span className="text-sm sm:text-base mb-2 sm:mb-0">
-                        {uc.card_name}
-                      </span>
-                                            <button
-                                                onClick={() => removeCard(idx)}
-                                                className="btn btn-danger w-full sm:w-auto text-sm"
+                                    {profile.userCards.map((uc, idx) => {
+                                        const reward = uc.rewardDetails?.cardReward;
+
+                                        return (
+                                            <motion.li
+                                                key={uc.card_name + idx}
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -20 }}
+                                                transition={{ duration: 0.3 }}
+                                                className="bg-gray-50 border rounded-lg p-3 sm:p-4"
                                             >
-                                                Remove
-                                            </button>
-                                        </motion.li>
-                                    ))}
+                                                <div
+                                                    className="flex justify-between items-center cursor-pointer"
+                                                    onClick={() => toggleExpand(uc.card_name)}
+                                                >
+                          <span className="text-sm sm:text-base font-medium">
+                            {uc.card_name}
+                          </span>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            removeCard(idx);
+                                                        }}
+                                                        className="btn btn-danger text-sm"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </div>
+
+                                                {/* Reward Details */}
+                                                {expandedCard === uc.card_name && reward && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, height: 0 }}
+                                                        animate={{ opacity: 1, height: "auto" }}
+                                                        exit={{ opacity: 0, height: 0 }}
+                                                        transition={{ duration: 0.3 }}
+                                                        className="mt-3 text-sm bg-white border rounded-lg p-3 space-y-2"
+                                                    >
+                                                        <p>
+                                                            <strong>Base Rate:</strong> {reward.base_rate}
+                                                        </p>
+
+                                                        {/* Bonus Categories */}
+                                                        {reward.bonus_categories?.length > 0 && (
+                                                            <div>
+                                                                <strong>Bonus Categories:</strong>
+                                                                <ul className="list-disc pl-5">
+                                                                    {reward.bonus_categories.map(
+                                                                        (b: any, i: number) => (
+                                                                            <li key={i}>
+                                                                                {b.category} — {b.rate}
+                                                                                {b.cap && <span> (Cap: {b.cap})</span>}
+                                                                                {b.exclusions?.length > 0 && (
+                                                                                    <span>
+                                                                                {" "}
+                                                                                | Exclusions:{" "}
+                                                                                {b.exclusions.join(", ")}
+                                                                            </span>
+                                                                        )}
+                                                                        </li>
+                                                                        )
+                                                                        )}
+                                                                </ul>
+                                                            </div>
+                                                        )}
+
+                                                        {/* User Choice Categories */}
+                                                        {reward.user_choice_categories?.length > 0 && (
+                                                            <div>
+                                                                <strong>User Choice Categories:</strong>
+                                                                <ul className="list-disc pl-5">
+                                                                    {reward.user_choice_categories.map(
+                                                                        (u: any, i: number) => (
+                                                                            <li key={i}>
+                                                                                {u.rate} on {u.options.join(", ")}{" "}
+                                                                                {u.notes && `(${u.notes})`}
+                                                                            </li>
+                                                                        )
+                                                                    )}
+                                                                </ul>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Rotating Categories */}
+                                                        {reward.rotating_categories && (
+                                                            <div>
+                                                                <strong>Rotating Categories:</strong>
+                                                                {Object.entries(
+                                                                    reward.rotating_categories
+                                                                ).map(([quarter, categories]: [string, any[]]) =>
+                                                                        categories.length > 0 ? (
+                                                                            <div key={quarter} className="mt-1">
+                                                                                <p className="font-semibold">{quarter}</p>
+                                                                                <ul className="list-disc pl-5">
+                                                                                    {categories.map((c, i) => (
+                                                                                        <li key={i}>
+                                                                                            {c.category} — {c.rate}
+                                                                                            {c.exclusions?.length > 0 && (
+                                                                                                <span>
+                                                {" "}
+                                                                                                    | Exclusions:{" "}
+                                                                                                    {c.exclusions.join(", ")}
+                                              </span>
+                                                                                            )}
+                                                                                        </li>
+                                                                                    ))}
+                                                                                </ul>
+                                                                            </div>
+                                                                        ) : null
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        <p>
+                                                            <strong>Redeem As:</strong> {reward.redeem_as}
+                                                        </p>
+                                                        <p>
+                                                            <strong>Annual Fee:</strong>{" "}
+                                                            {reward.annual_fee?.first_year} (Then{" "}
+                                                            {reward.annual_fee?.thereafter})
+                                                        </p>
+                                                        {reward.notes && (
+                                                            <p className="text-gray-600 italic">
+                                                                {reward.notes}
+                                                            </p>
+                                                        )}
+                                                    </motion.div>
+                                                )}
+                                            </motion.li>
+                                        );
+                                    })}
                                 </AnimatePresence>
                             </ul>
 
