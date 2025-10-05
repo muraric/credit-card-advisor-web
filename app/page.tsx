@@ -27,6 +27,7 @@ export default function Suggestions() {
 
     // Auth
     const [email, setEmail] = useState<string | null>(null);
+    const [userName, setUserName] = useState<string>("there");
 
     // UI / form
     const [storeInput, setStoreInput] = useState("");
@@ -44,13 +45,38 @@ export default function Suggestions() {
     const [loading, setLoading] = useState(false);
     const [errMsg, setErrMsg] = useState<string | null>(null);
 
+    // 🧠 Load email and name
     useEffect(() => {
-        const { email: storedEmail } = getAuth();
-        if (!storedEmail) {
+        const auth = getAuth();
+        if (!auth?.email) {
             router.push("/login");
             return;
         }
-        setEmail(storedEmail);
+
+        setEmail(auth.email);
+
+        // Fetch the user's name from backend
+        const fetchUserName = async () => {
+            try {
+                const res = await api.get(`/api/user/${encodeURIComponent(auth.email)}`);
+                const fetchedName = res.data?.name;
+                if (fetchedName) {
+                    // Capitalize each word
+                    const formatted = fetchedName
+                        .split(" ")
+                        .map(
+                            (w: string) =>
+                                w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+                        )
+                        .join(" ");
+                    setUserName(formatted);
+                }
+            } catch (err) {
+                console.error("❌ Failed to load name:", err);
+            }
+        };
+
+        fetchUserName();
     }, [router]);
 
     const applyResponse = (data: any) => {
@@ -70,7 +96,6 @@ export default function Suggestions() {
         if (returnedStore) setStoreInput(returnedStore);
     };
 
-    // Submit suggestions request
     const handleSubmit = async (storeName: string, category?: string) => {
         if (!email) return;
         if (!storeName.trim()) {
@@ -98,7 +123,6 @@ export default function Suggestions() {
         }
     };
 
-    // Detect nearby stores
     const handleDetectStore = async () => {
         if (!email) return;
 
@@ -168,10 +192,38 @@ export default function Suggestions() {
         }
     };
 
+    // Greeting & emoji based on time
+    const hour = new Date().getHours();
+    let greeting = "Hello";
+    let emoji = "💡";
+
+    if (hour < 12) {
+        greeting = "Good morning";
+        emoji = "🌅";
+    } else if (hour < 18) {
+        greeting = "Good afternoon";
+        emoji = "🌇";
+    } else {
+        greeting = "Good evening";
+        emoji = "🌙";
+    }
+
     return (
         <Layout>
             <div className="max-w-lg mx-auto w-full px-4 space-y-6">
-                <h1>💡 Suggestions</h1>
+                {/* Personalized Greeting */}
+                <div className="space-y-1 mb-4">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
+                        {emoji} {greeting}, {userName}!
+                    </h1>
+                    <p className="text-sm sm:text-base text-gray-600">
+                        Let’s find the{" "}
+                        <span className="font-medium text-blue-600">
+              best credit card
+            </span>{" "}
+                        for your next purchase — personalized just for you.
+                    </p>
+                </div>
 
                 {/* Manual store input */}
                 <div className="flex flex-col sm:flex-row gap-2">
