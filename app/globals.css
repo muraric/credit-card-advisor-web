@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ✅ Custom safe-area utility (adds notch/status-bar padding) */
+@layer utilities {
+    .safe-area {
+        padding-top: constant(safe-area-inset-top, 24px);
+        padding-top: env(safe-area-inset-top, 24px);
+    }
+}
+
 /* Global typography */
 h1 {
     @apply text-2xl sm:text-3xl font-bold text-gray-900;
