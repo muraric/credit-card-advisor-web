@@ -1,0 +1,38 @@
+// =============================================================
+// Top-level Gradle build file for all modules
+// Forces Gradle and all sub-projects to use Java 17
+// =============================================================
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // Android Gradle Plugin (match Gradle wrapper version)
+        classpath 'com.android.tools.build:gradle:8.3.2'
+        // Google Services (only needed if using Firebase or FCM)
+        classpath 'com.google.gms:google-services:4.4.2'
+    }
+}
+
+// Shared variables for compileSdk / minSdk / targetSdk
+apply from: "variables.gradle"
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    // ✅ Force all Java compile tasks to use Java 17
+    tasks.withType(JavaCompile).configureEach {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+        options.release = 17
+    }
+}
+
+// Global clean task
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}

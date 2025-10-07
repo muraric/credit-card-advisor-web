@@ -13,7 +13,7 @@ export default function Header() {
     };
 
     return (
-        <header className="flex justify-between items-center py-4 border-b">
+        <header className="safe-area flex justify-between items-center py-4 border-b bg-white z-50">
             <h1
                 className="text-xl font-bold cursor-pointer"
                 onClick={() => router.push("/")}
