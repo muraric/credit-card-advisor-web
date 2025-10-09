@@ -10,7 +10,7 @@
     }
     /* small extra breathing room below the cutout */
     .pt-safe-plus {
-        padding-top: calc(env(safe-area-inset-top, 24px) + 8px);
+        padding-top: calc(env(safe-area-inset-top, 40px) + 16px);
     }
 }
 
