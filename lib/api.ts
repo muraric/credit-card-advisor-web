@@ -1,6 +1,16 @@
 import axios from "axios";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080";
+const isEmulator =
+    typeof window !== "undefined" &&
+    (window.location.hostname.includes("192.168.1.67") ||
+        window.location.hostname.includes("localhost"));
+
+const API_BASE = isEmulator
+    ? "http://192.168.1.67:8080"
+    : process.env.NEXT_PUBLIC_API_BASE ||  "http://localhost:8080";
+
+console.log(isEmulator);
+console.log(API_BASE);
 
 // Create an axios instance
 const api = axios.create({

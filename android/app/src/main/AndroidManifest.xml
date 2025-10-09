@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
+
 
     <!-- 🌐 Required permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -17,10 +19,12 @@
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
-            android:usesCleartextTraffic="false"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:theme="@style/AppTheme.NoActionBar"
+            android:usesCleartextTraffic="true"
+            tools:replace="android:usesCleartextTraffic">
 
-        <!-- ✅ Main Activity -->
+
+    <!-- ✅ Main Activity -->
         <activity
                 android:name=".MainActivity"
                 android:exported="true"
