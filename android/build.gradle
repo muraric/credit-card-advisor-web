@@ -1,21 +1,37 @@
-// =============================================================
-// Top-level Gradle build file for all modules
-// Forces Gradle and all sub-projects to use Java 17
-// =============================================================
+// =======================================================
+//  Top-level Gradle configuration – hard-lock Java 17
+// =======================================================
+gradle.settingsEvaluated {
+    gradle.rootProject.extensions.extraProperties.set(
+        "org.gradle.java.installations.auto-download", false
+    )
+}
+
+gradle.projectsLoaded {
+    logger.lifecycle("🔒 Forcing all Gradle toolchains to Java 17")
+    gradle.allprojects {
+        tasks.withType(JavaCompile).configureEach {
+            sourceCompatibility = JavaVersion.VERSION_21
+            targetCompatibility = JavaVersion.VERSION_21
+            options.release = 21
+        }
+    }
+}
+
+// =======================================================
+//  Standard Android build setup
+// =======================================================
 buildscript {
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        // Android Gradle Plugin (match Gradle wrapper version)
         classpath 'com.android.tools.build:gradle:8.3.2'
-        // Google Services (only needed if using Firebase or FCM)
         classpath 'com.google.gms:google-services:4.4.2'
     }
 }
 
-// Shared variables for compileSdk / minSdk / targetSdk
 apply from: "variables.gradle"
 
 allprojects {
@@ -24,15 +40,17 @@ allprojects {
         mavenCentral()
     }
 
-    // ✅ Force all Java compile tasks to use Java 17
-    tasks.withType(JavaCompile).configureEach {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-        options.release = 17
+    // secondary safety net for Java 17
+    plugins.withType(JavaPlugin).configureEach {
+        java {
+            toolchain {
+                languageVersion = JavaLanguageVersion.of(21)
+            }
+        }
     }
 }
 
-// Global clean task
+// Clean task
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }

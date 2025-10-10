@@ -7,6 +7,7 @@ const config: CapacitorConfig = {
     server: {
         // 👇 Load your live Vercel app
         url: 'http://192.168.1.67:3000', // Replace with your actual URL
+       // url: 'https://credit-card-advisor-web.vercel.app', // Replace with your actual URL
         cleartext: true,
     },
 };

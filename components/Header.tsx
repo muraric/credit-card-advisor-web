@@ -1,11 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { clearAuth, getAuth } from "../lib/auth";
+import {useRouter} from "next/navigation";
+import {clearAuth, getAuth} from "../lib/auth";
 
 export default function Header() {
     const router = useRouter();
-    const { email } = getAuth();
+    const {email} = getAuth();
 
     const handleSignOut = () => {
         clearAuth();
@@ -13,7 +13,9 @@ export default function Header() {
     };
 
     return (
-        <header className="safe-area flex justify-between items-center py-4 border-b bg-white z-50">
+        <header style={{paddingTop: "60px"}}
+            // className="safe-area flex justify-between items-center py-4 border-b bg-white z-50">
+                className="pt-safe-plus bg-white border-b shadow-sm grid grid-cols-3 items-center px-4">
             <h1
                 className="text-xl font-bold cursor-pointer"
                 onClick={() => router.push("/")}

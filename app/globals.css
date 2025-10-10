@@ -5,12 +5,12 @@
 /* ✅ Custom safe-area utility (adds notch/status-bar padding) */
 @layer utilities {
     .pt-safe {
-        padding-top: constant(safe-area-inset-top, 24px);
-        padding-top: env(safe-area-inset-top, 24px);
+        padding-top: constant(safe-area-inset-top, 56px);
+        padding-top: env(safe-area-inset-top, 56px);
     }
     /* small extra breathing room below the cutout */
     .pt-safe-plus {
-        padding-top: calc(env(safe-area-inset-top, 40px) + 16px);
+        padding-top: calc(env(safe-area-inset-top, 56px) + 20px);
     }
 }
 
