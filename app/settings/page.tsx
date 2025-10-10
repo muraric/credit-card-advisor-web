@@ -8,6 +8,8 @@ import { getAuth } from "../../lib/auth";
 import Layout from "../../components/Layout";
 import { AnimatePresence, motion } from "framer-motion";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import { Capacitor } from "@capacitor/core";
+import { StatusBar, Style } from "@capacitor/status-bar";
 
 interface RewardDetails {
     cardReward?: Record<string, any>;
@@ -33,6 +35,21 @@ export default function Settings() {
     const [newCard, setNewCard] = useState("");
     const [loading, setLoading] = useState(false);
     const [expandedCard, setExpandedCard] = useState<string | null>(null);
+
+    // ✅ Prevent overlap under Android status bar
+    useEffect(() => {
+        if (Capacitor.getPlatform() === "android") {
+            (async () => {
+                try {
+                    await StatusBar.setOverlaysWebView({ overlay: false });
+                    await StatusBar.setStyle({ style: Style.Dark });
+                    await StatusBar.setBackgroundColor({ color: "#ffffff" });
+                } catch {
+                    /* ignore */
+                }
+            })();
+        }
+    }, []);
 
     useEffect(() => {
         const { email: storedEmail } = getAuth();
@@ -66,7 +83,6 @@ export default function Settings() {
                     card_name: uc.card_name,
                 })),
             };
-
             const res = await api.put(
                 `/api/user/${encodeURIComponent(email)}`,
                 payload
@@ -109,9 +125,8 @@ export default function Settings() {
 
     return (
         <Layout>
-            <div className="max-w-lg mx-auto w-full px-4 space-y-6">
-                <h1>⚙️ Settings</h1>
-
+            {/* ✅ Added safe padding but removed duplicate "⚙️ Settings" */}
+            <div className="max-w-lg mx-auto w-full px-4 space-y-6 pt-safe-plus">
                 {loading && <LoadingSpinner />}
 
                 {profile && !loading && (
@@ -202,7 +217,6 @@ export default function Settings() {
                                                             <strong>Base Rate:</strong> {reward.base_rate}
                                                         </p>
 
-                                                        {/* Bonus Categories */}
                                                         {reward.bonus_categories?.length > 0 && (
                                                             <div>
                                                                 <strong>Bonus Categories:</strong>
@@ -226,7 +240,6 @@ export default function Settings() {
                                                             </div>
                                                         )}
 
-                                                        {/* User Choice Categories */}
                                                         {reward.user_choice_categories?.length > 0 && (
                                                             <div>
                                                                 <strong>User Choice Categories:</strong>
@@ -243,7 +256,6 @@ export default function Settings() {
                                                             </div>
                                                         )}
 
-                                                        {/* Rotating Categories */}
                                                         {reward.rotating_categories && (
                                                             <div>
                                                                 <strong>Rotating Categories:</strong>
@@ -297,10 +309,7 @@ export default function Settings() {
                                 </AnimatePresence>
                             </ul>
 
-                            <button
-                                onClick={saveProfile}
-                                className="btn btn-success w-full mt-4"
-                            >
+                            <button onClick={saveProfile} className="btn btn-success w-full mt-4">
                                 Save Cards
                             </button>
                         </div>

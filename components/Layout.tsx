@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { clearAuth } from "../lib/auth";
 
-function Layout({ children }: { children: React.ReactNode }) {
+export default function Layout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
 
@@ -21,42 +21,46 @@ function Layout({ children }: { children: React.ReactNode }) {
     return (
         <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
             {/* Header */}
-            <header className="bg-white shadow-sm px-4 py-3 flex justify-between items-center">
+            <header className="pt-safe-plus sticky top-0 z-50 bg-white border-b shadow-sm grid grid-cols-3 items-center px-4 py-3">
                 {/* Left: Toggle icon */}
-                {pathname === "/settings" ? (
-                    <Link
-                        href="/"
-                        className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition"
-                    >
-                        🏠
-                    </Link>
-                ) : (
-                    <Link
-                        href="/settings"
-                        className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition"
-                    >
-                        ⚙️
-                    </Link>
-                )}
+                <div className="justify-self-start">
+                    {pathname === "/settings" ? (
+                        <Link
+                            href="/"
+                            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition"
+                            aria-label="Home"
+                        >
+                            🏠
+                        </Link>
+                    ) : (
+                        <Link
+                            href="/settings"
+                            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition"
+                            aria-label="Settings"
+                        >
+                            ⚙️
+                        </Link>
+                    )}
+                </div>
 
                 {/* Center: Page title */}
-                <h1 className="text-base sm:text-lg font-semibold text-gray-800">
+                <h1 className="justify-self-center text-base sm:text-lg font-semibold text-gray-800">
                     {getTitle()}
                 </h1>
 
                 {/* Right: Sign out */}
-                <button
-                    onClick={handleSignOut}
-                    className="btn btn-danger px-3 py-1 text-xs sm:text-sm"
-                >
-                    Sign Out
-                </button>
+                <div className="justify-self-end">
+                    <button
+                        onClick={handleSignOut}
+                        className="btn btn-danger px-3 py-1 text-xs sm:text-sm"
+                    >
+                        Sign Out
+                    </button>
+                </div>
             </header>
 
             {/* Main content */}
-            <main className="flex-1 max-w-5xl mx-auto p-4 sm:p-6 w-full">
-                {children}
-            </main>
+            <main className="flex-1 max-w-5xl mx-auto p-4 sm:p-6 w-full">{children}</main>
 
             {/* Footer */}
             <footer className="bg-white text-center py-3 text-xs text-gray-500 border-t">
@@ -65,5 +69,3 @@ function Layout({ children }: { children: React.ReactNode }) {
         </div>
     );
 }
-
-export default Layout;

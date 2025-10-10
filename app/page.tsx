@@ -10,6 +10,8 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import TipBanner from "../components/TipBanner";
 import api from "../lib/api";
 import { getAuth } from "../lib/auth";
+import { Capacitor } from "@capacitor/core";
+import { StatusBar, Style } from "@capacitor/status-bar";
 
 type Suggestion = {
     card_name: string;
@@ -29,12 +31,12 @@ export default function Suggestions() {
     const [email, setEmail] = useState<string | null>(null);
     const [userName, setUserName] = useState<string>("there");
 
-    // UI / form
+    // UI
     const [storeInput, setStoreInput] = useState("");
     const [storeOptions, setStoreOptions] = useState<StoreInfo[]>([]);
     const [showModal, setShowModal] = useState(false);
 
-    // Data from backend
+    // Data
     const [detectedStore, setDetectedStore] = useState<string | null>(null);
     const [category, setCategory] = useState<string | null>(null);
     const [currentQuarter, setCurrentQuarter] = useState<string | null>(null);
@@ -44,6 +46,21 @@ export default function Suggestions() {
     // UX
     const [loading, setLoading] = useState(false);
     const [errMsg, setErrMsg] = useState<string | null>(null);
+
+    // ✅ Prevent overlap under Android status bar
+    useEffect(() => {
+        if (Capacitor.getPlatform() === "android") {
+            (async () => {
+                try {
+                    await StatusBar.setOverlaysWebView({ overlay: false });
+                    await StatusBar.setStyle({ style: Style.Dark });
+                    await StatusBar.setBackgroundColor({ color: "#ffffff" });
+                } catch {
+                    /* ignore */
+                }
+            })();
+        }
+    }, []);
 
     // 🧠 Load email and name
     useEffect(() => {
@@ -55,19 +72,16 @@ export default function Suggestions() {
 
         setEmail(auth.email);
 
-        // Fetch the user's name from backend
         const fetchUserName = async () => {
             try {
                 const emailParam = encodeURIComponent(auth.email ?? "");
                 const res = await api.get(`/api/user/${emailParam}`);
                 const fetchedName = res.data?.name;
                 if (fetchedName) {
-                    // Capitalize each word
                     const formatted = fetchedName
                         .split(" ")
                         .map(
-                            (w: string) =>
-                                w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+                            (w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
                         )
                         .join(" ");
                     setUserName(formatted);
@@ -80,6 +94,7 @@ export default function Suggestions() {
         fetchUserName();
     }, [router]);
 
+    // ---------- Helpers ----------
     const applyResponse = (data: any) => {
         const returnedStore = data?.store ?? null;
         const returnedCategory = data?.category ?? null;
@@ -97,6 +112,7 @@ export default function Suggestions() {
         if (returnedStore) setStoreInput(returnedStore);
     };
 
+    // ---------- Actions ----------
     const handleSubmit = async (storeName: string, category?: string) => {
         if (!email) return;
         if (!storeName.trim()) {
@@ -106,19 +122,22 @@ export default function Suggestions() {
 
         setErrMsg(null);
         setLoading(true);
+
+        const start = Date.now();
         try {
             const res = await api.post("/api/get-card-suggestions", {
                 email,
                 store: storeName.trim(),
                 category: category || "general",
             });
-
-            console.log("🔎 Suggestion response:", res.data);
             applyResponse(res.data);
         } catch (err: any) {
             console.error("❌ Suggestion error:", err);
             setErrMsg("Failed to get suggestions. Please try again.");
         } finally {
+            const elapsed = Date.now() - start;
+            const remaining = 1000 - elapsed;
+            if (remaining > 0) await new Promise((r) => setTimeout(r, remaining));
             setLoading(false);
             setShowModal(false);
         }
@@ -145,17 +164,14 @@ export default function Suggestions() {
                         params: { latitude, longitude },
                     });
 
-                    // ✅ Normalize new and old Google API response formats
                     let stores: StoreInfo[] = [];
 
                     if (res.data?.stores?.places && Array.isArray(res.data.stores.places)) {
-                        // New Google Places format
                         stores = res.data.stores.places.map((p: any) => ({
                             name: p.displayName?.text || "Unknown",
                             category: p.primaryType || "general",
                         }));
                     } else if (Array.isArray(res.data?.stores)) {
-                        // Old format fallback
                         stores = res.data.stores.map((s: any) => ({
                             name: s.name,
                             category: s.category,
@@ -189,7 +205,6 @@ export default function Suggestions() {
 
     if (!email) return null;
 
-    // Category → Tailwind text colors
     const getCategoryColor = (cat: string | null) => {
         const normalized = cat ? cat.toLowerCase() : "";
         switch (normalized) {
@@ -209,7 +224,6 @@ export default function Suggestions() {
         }
     };
 
-    // Greeting & emoji based on time
     const hour = new Date().getHours();
     let greeting = "Hello";
     let emoji = "💡";
@@ -225,25 +239,33 @@ export default function Suggestions() {
         emoji = "🌙";
     }
 
+    // ---------- UI ----------
     return (
         <Layout>
-            <div className="max-w-lg mx-auto w-full px-4 space-y-6">
-                {/* Personalized Greeting */}
+            <div className="max-w-lg mx-auto w-full px-4 space-y-6 pt-safe-plus">
+                {/* Greeting */}
                 <div className="space-y-1 mb-4">
                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
                         {emoji} {greeting}, {userName}!
                     </h1>
                     <p className="text-sm sm:text-base text-gray-600">
                         Let’s find the{" "}
-                        <span className="font-medium text-blue-600">
-              best credit card
-            </span>{" "}
+                        <span className="font-medium text-blue-600">best credit card</span>{" "}
                         for your next purchase — personalized just for you.
                     </p>
                 </div>
 
-                {/* Manual store input */}
-                <div className="flex flex-col sm:flex-row gap-2">
+                {/* ✅ Auto-detect button moved up */}
+                <button
+                    onClick={handleDetectStore}
+                    className="btn btn-primary w-full"
+                    disabled={loading}
+                >
+                    📍 Detect My Store & Get Suggestions
+                </button>
+
+                {/* Manual input */}
+                <div className="flex flex-col sm:flex-row gap-2 mt-2">
                     <input
                         className="flex-1 border p-3 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                         placeholder="Enter store name (e.g. Walmart, Patel Brothers)"
@@ -258,29 +280,16 @@ export default function Suggestions() {
                     </button>
                 </div>
 
-                {/* Auto-detect */}
-                <button
-                    onClick={handleDetectStore}
-                    className="btn btn-primary w-full mt-3"
-                    disabled={loading}
-                >
-                    📍 Detect My Store & Get Suggestions
-                </button>
-
-                {/* Tip */}
                 <TipBanner text="Pro Tip: Add your cards in Settings to get more accurate recommendations." />
 
-                {/* Error */}
                 {errMsg && (
                     <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
                         {errMsg}
                     </div>
                 )}
 
-                {/* Loading */}
                 {loading && <LoadingSpinner />}
 
-                {/* Store banner */}
                 {!loading && detectedStore && (
                     <div className="p-4 rounded-lg bg-gray-100 border text-sm text-gray-700 space-y-1">
                         <div>
@@ -307,16 +316,14 @@ export default function Suggestions() {
                     </div>
                 )}
 
-                {/* Best card */}
                 {!loading && bestCard && <BestCardBanner card={bestCard} />}
 
-                {/* Others */}
                 {!loading && suggestions.length > 0 && (
                     <SuggestionsList suggestions={suggestions} />
                 )}
             </div>
 
-            {/* Modal for store options */}
+            {/* Modal for detected stores */}
             {showModal && storeOptions.length > 0 && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
                     <div className="bg-white rounded-lg shadow-lg w-11/12 max-w-md p-6 space-y-4">
@@ -327,7 +334,11 @@ export default function Suggestions() {
                             {storeOptions.map((s, idx) => (
                                 <li key={idx}>
                                     <button
-                                        onClick={() => handleSubmit(s.name, s.category)}
+                                        onClick={() => {
+                                            setShowModal(false);
+                                            setLoading(true);
+                                            setTimeout(() => handleSubmit(s.name, s.category), 100);
+                                        }}
                                         className="w-full text-left px-4 py-2 border rounded-lg hover:bg-gray-50"
                                     >
                                         {s.name}{" "}
