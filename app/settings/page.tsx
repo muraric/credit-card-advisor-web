@@ -341,7 +341,7 @@ export default function Settings() {
                                                 {reward.rotating_categories && (
                                                     <div>
                                                         <strong>Rotating Categories:</strong>
-                                                        {Object.entries(reward.rotating_categories).map(
+                                                        {Object.entries(reward.rotating_categories as Record<string, any[]>).map(
                                                             ([quarter, cats]: [string, any[]]) =>
                                                                 cats.length > 0 && (
                                                                     <div key={quarter} className="mt-1">
